@@ -10,7 +10,7 @@ body{
     margin:0;
     padding:12px;
     background:#eef3f8;
-    font-family:Segoe UI,Arial;
+    font-family:Segoe UI,Arial,sans-serif;
 }
 
 .container{
@@ -41,7 +41,7 @@ body{
     border-radius:16px;
     padding:16px;
     margin-top:14px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.15);
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
 }
 
 .bigBtn{
@@ -65,6 +65,9 @@ body{
     font-weight:bold;
     cursor:pointer;
     margin-top:8px;
+    display:block;
+    text-align:center;
+    box-sizing:border-box;
 }
 
 .blue{
@@ -118,6 +121,11 @@ details{
     padding:10px;
     background:white;
 }
+
+summary{
+    cursor:pointer;
+    font-weight:bold;
+}
 </style>
 </head>
 
@@ -153,6 +161,10 @@ Registros hoy: 0
 Borrar firma
 </button>
 
+<label for="fotoInput" class="btn blue">
+📷 HACER FOTO
+</label>
+
 <input
 type="file"
 id="fotoInput"
@@ -160,12 +172,6 @@ accept="image/*"
 capture="environment"
 style="display:none"
 >
-
-<button
-class="btn blue"
-onclick="document.getElementById('fotoInput').click()">
-📷 HACER FOTO
-</button>
 
 <div id="previewFotos"></div>
 
@@ -229,6 +235,7 @@ function getPos(e){
 
 function iniciar(e){
     dibujando = true;
+
     const p = getPos(e);
 
     ctx.beginPath();
@@ -289,12 +296,33 @@ function renderFotos(){
 
     div.innerHTML="";
 
-    fotos.forEach(f=>{
+    fotos.forEach((foto,index)=>{
 
         div.innerHTML += `
-            <img class="thumb" src="${f}">
+
+        <div style="margin-top:10px">
+
+        <img class="thumb" src="${foto}">
+
+        <button
+        class="btn red"
+        onclick="eliminarFoto(${index})">
+
+        🗑 Eliminar foto
+
+        </button>
+
+        </div>
+
         `;
     });
+}
+
+function eliminarFoto(index){
+
+    fotos.splice(index,1);
+
+    renderFotos();
 }
 
 function guardarRegistro(){
@@ -308,24 +336,24 @@ function guardarRegistro(){
     }
 
     if(fotos.length===0){
-        alert("Añade al menos una foto");
+        alert("Debes añadir al menos una foto");
         return;
     }
 
-    const fechaAhora = new Date();
+    const ahora = new Date();
 
     const registro = {
 
         cliente:cliente,
 
         fecha:
-        fechaAhora.toLocaleDateString("es-ES"),
+        ahora.toLocaleDateString("es-ES"),
 
         hora:
-        fechaAhora.toLocaleTimeString("es-ES"),
+        ahora.toLocaleTimeString("es-ES"),
 
         firma:
-        canvas.toDataURL(),
+        canvas.toDataURL("image/png"),
 
         fotos:[...fotos]
     };
@@ -353,7 +381,7 @@ function guardarRegistro(){
 
     cargarHistorial();
 
-    alert("Registro guardado correctamente");
+    alert("✅ Registro guardado correctamente");
 }
 
 function borrarRegistro(index){
@@ -411,16 +439,17 @@ function cargarHistorial(){
         <details>
 
         <summary>
-        <b>${r.fecha} ${r.hora}</b>
-        - ${r.cliente}
+        ${r.fecha} ${r.hora} - ${r.cliente}
         </summary>
 
         <div class="record">
 
-        <p><b>Cliente:</b> ${r.cliente}</p>
+        <p><b>Cliente / Proveedor:</b> ${r.cliente}</p>
 
         <p><b>Firma:</b></p>
         <img src="${r.firma}">
+
+        <p><b>Fotos:</b></p>
 
         ${r.fotos.map(
             f => `<img src="${f}">`
