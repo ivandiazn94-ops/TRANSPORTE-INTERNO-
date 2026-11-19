@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRANSPORTE INTERNO SYNTEGON TELSTAR V6</title>
+<style>
+body{margin:0;padding:12px;font-family:Segoe UI,Arial;background:#eef3f8}
+.container{max-width:900px;margin:auto}.header{background:#003b7a;color:#fff;padding:20px;border-radius:18px;text-align:center}
+.logo{font-size:34px;font-weight:900}.card{background:#fff;padding:16px;border-radius:16px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.btn{width:100%;padding:16px;border:none;border-radius:12px;color:#fff;font-weight:700;margin-top:8px;cursor:pointer}
+.blue{background:#0078d4}.green{background:#107c10}.red{background:#c50f1f}
+input{width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;box-sizing:border-box}
+video,img{width:100%;border-radius:10px;margin-top:8px}
+canvas{border:2px solid #ccc;border-radius:10px;width:100%;height:180px;touch-action:none;background:white;display:block}
+details{border:1px solid #ddd;border-radius:10px;padding:10px;margin-top:10px}
+summary{cursor:pointer;font-weight:bold}
+</style></head><body>
+<div class="container">
+<div class="header"><div class="logo">SYNTEGON</div><div>TRANSPORTE INTERNO TELSTAR</div><div id="contador">Registros hoy: 0</div></div>
+<div class="card">
+<button class="btn blue" onclick="nuevoRegistro()">📷 NUEVO REGISTRO</button>
+<div id="form" style="display:none">
+<p><b>Proveedor / Cliente</b></p><input id="cliente">
+<p><b>Firma</b></p>
+<canvas id="firma" tabindex="-1"></canvas>
+<button class="btn red" onclick="limpiarFirma()">Borrar firma</button>
+<button class="btn blue" onclick="abrirCamara()">📷 ABRIR CÁMARA</button>
+<div id="camaraBox" style="display:none">
+<video id="video" autoplay playsinline></video>
+<button class="btn green" onclick="tomarFoto()">📸 TOMAR FOTO</button>
+<button class="btn red" onclick="cerrarCamara()">❌ CERRAR CÁMARA</button>
+</div>
+<div id="preview"></div>
+<button class="btn green" onclick="guardarRegistro()">✅ GUARDAR REGISTRO</button>
+</div></div>
+<div class="card"><h3>Historial</h3><div id="historial"></div></div></div>
+<script>
+let fotos=[];let stream=null;
+function nuevoRegistro(){document.getElementById('form').style.display='block'}
+const canvas=document.getElementById('firma');
+const ctx=canvas.getContext('2d');
+canvas.blur();
+function resizeCanvas(){canvas.width=canvas.offsetWidth;canvas.height=180;ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';}
+resizeCanvas();window.addEventListener('resize',resizeCanvas);
+let draw=false;
+function getPos(e){const r=canvas.getBoundingClientRect();if(e.touches&&e.touches.length){return{x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top}}return{x:e.clientX-r.left,y:e.clientY-r.top}}
+canvas.addEventListener('mousedown',e=>{draw=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)});
+canvas.addEventListener('mousemove',e=>{if(!draw)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke()});
+window.addEventListener('mouseup',()=>draw=false);
+canvas.addEventListener('touchstart',e=>{e.preventDefault();draw=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)},{passive:false});
+canvas.addEventListener('touchmove',e=>{if(!draw)return;e.preventDefault();const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke()},{passive:false});
+canvas.addEventListener('touchend',e=>{e.preventDefault();draw=false},{passive:false});
+function limpiarFirma(){ctx.clearRect(0,0,canvas.width,canvas.height)}
+async function abrirCamara(){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=stream;camaraBox.style.display='block';}catch(e){alert('Permite acceso a la cámara y usa HTTPS');}}
+function cerrarCamara(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}camaraBox.style.display='none';}
+function tomarFoto(){const video=document.getElementById('video');const canvasFoto=document.createElement('canvas');const anchoMax=800;canvasFoto.width=anchoMax;canvasFoto.height=Math.round(video.videoHeight*(anchoMax/video.videoWidth));canvasFoto.getContext('2d').drawImage(video,0,0,canvasFoto.width,canvasFoto.height);fotos.push(canvasFoto.toDataURL('image/jpeg',0.5));renderFotos();}
+function renderFotos(){preview.innerHTML=fotos.map((f,i)=>`<div><img src="${f}"><button class="btn red" onclick="eliminarFoto(${i})">🗑 Eliminar foto</button></div>`).join('')}
+function eliminarFoto(i){fotos.splice(i,1);renderFotos()}
+function guardarRegistro(){const registros=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');const ahora=new Date();registros.push({cliente:cliente.value,fecha:ahora.toLocaleDateString('es-ES'),hora:ahora.toLocaleTimeString('es-ES'),firma:canvas.toDataURL('image/jpeg',0.4),fotos:[...fotos]});localStorage.setItem('registrosTransporte',JSON.stringify(registros));cliente.value='';fotos=[];renderFotos();limpiarFirma();cargar();alert('Registro guardado');}
+function borrar(i){const r=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');r.splice(i,1);localStorage.setItem('registrosTransporte',JSON.stringify(r));cargar();}
+function cargar(){const r=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');contador.innerText='Registros hoy: '+r.filter(x=>x.fecha===new Date().toLocaleDateString('es-ES')).length;historial.innerHTML='';r.slice().reverse().forEach((reg,p)=>{const i=r.length-1-p;historial.innerHTML+=`<details><summary>${reg.fecha} ${reg.hora} - ${reg.cliente||'Sin nombre'}</summary><p><b>Cliente:</b> ${reg.cliente||''}</p><img src="${reg.firma}">${(reg.fotos||[]).map(f=>`<img src="${f}">`).join('')}<button class="btn red" onclick="borrar(${i})">🗑 Borrar</button></details>`})}
+cargar();
+</script></body></html>
