@@ -1,1 +1,575 @@
-<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRANSPORTE INTERNO SYNTEGON TELSTAR</title><style>body{margin:0;padding:12px;font-family:Segoe UI,Arial;background:#eef3f8}.container{max-width:900px;margin:auto}.header{background:#003b7a;color:#fff;padding:20px;border-radius:18px;text-align:center}.logo{font-size:34px;font-weight:900}.card{background:#fff;padding:16px;border-radius:16px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,.15)}.btn{width:100%;padding:16px;border:none;border-radius:12px;color:#fff;font-weight:700;margin-top:8px}.blue{background:#0078d4}.green{background:#107c10}.red{background:#c50f1f}input{width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;box-sizing:border-box}video,img{width:100%;border-radius:10px;margin-top:8px}canvas{border:2px solid #ccc;border-radius:10px;width:100%;height:180px;touch-action:none}details{border:1px solid #ddd;border-radius:10px;padding:10px;margin-top:10px}</style></head><body><div class="container"><div class="header"><div class="logo">SYNTEGON</div><div>TRANSPORTE INTERNO TELSTAR</div><div id="contador">Registros hoy: 0</div></div><div class="card"><button class="btn blue" onclick="nuevoRegistro()">📷 NUEVO REGISTRO</button><div id="form" style="display:none"><p><b>Proveedor / Cliente</b></p><input id="cliente"><p><b>Firma</b></p><canvas id="firma"></canvas><button class="btn red" onclick="limpiarFirma()">Borrar firma</button><button class="btn blue" onclick="abrirCamara()">📷 ABRIR CÁMARA</button><div id="camaraBox" style="display:none"><video id="video" autoplay playsinline></video><button class="btn green" onclick="tomarFoto()">📸 TOMAR FOTO</button><button class="btn red" onclick="cerrarCamara()">❌ CERRAR CÁMARA</button></div><div id="preview"></div><button class="btn green" onclick="guardarRegistro()">✅ GUARDAR REGISTRO</button></div></div><div class="card"><h3>Historial</h3><div id="historial"></div></div></div><script>let fotos=[];let stream=null;function nuevoRegistro(){document.getElementById('form').style.display='block'}const canvas=document.getElementById('firma');const ctx=canvas.getContext('2d');function resize(){canvas.width=canvas.offsetWidth;canvas.height=180}resize();let draw=false;function pos(e){const r=canvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}};canvas.onmousedown=e=>{draw=true;let p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)};canvas.onmousemove=e=>{if(!draw)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};window.onmouseup=()=>draw=false;canvas.ontouchstart=e=>{draw=true;let p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)};canvas.ontouchmove=e=>{if(!draw)return;e.preventDefault();let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};canvas.ontouchend=()=>draw=false;function limpiarFirma(){ctx.clearRect(0,0,canvas.width,canvas.height)}async function abrirCamara(){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});document.getElementById('video').srcObject=stream;document.getElementById('camaraBox').style.display='block';}catch(e){alert('Permite acceso a la cámara y usa HTTPS (GitHub Pages)');}}function cerrarCamara(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}document.getElementById('camaraBox').style.display='none';}function tomarFoto(){const v=document.getElementById('video');const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);fotos.push(c.toDataURL('image/jpeg',0.9));renderFotos()}function renderFotos(){document.getElementById('preview').innerHTML=fotos.map((f,i)=>`<div><img src="${f}"><button class="btn red" onclick="eliminarFoto(${i})">🗑 Eliminar foto</button></div>`).join('')}function eliminarFoto(i){fotos.splice(i,1);renderFotos()}function guardarRegistro(){const r=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');const d=new Date();r.push({cliente:document.getElementById('cliente').value,fecha:d.toLocaleDateString('es-ES'),hora:d.toLocaleTimeString('es-ES'),firma:canvas.toDataURL(),fotos:[...fotos]});localStorage.setItem('registrosTransporte',JSON.stringify(r));document.getElementById('cliente').value='';fotos=[];renderFotos();limpiarFirma();cargar();alert('Registro guardado')}function borrar(i){const r=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');r.splice(i,1);localStorage.setItem('registrosTransporte',JSON.stringify(r));cargar()}function cargar(){const r=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');document.getElementById('contador').innerText='Registros hoy: '+r.filter(x=>x.fecha===new Date().toLocaleDateString('es-ES')).length;const h=document.getElementById('historial');h.innerHTML='';r.slice().reverse().forEach((x,n)=>{const i=r.length-1-n;h.innerHTML+=`<details><summary>${x.fecha} ${x.hora} - ${x.cliente||'Sin nombre'}</summary><p><b>Cliente:</b> ${x.cliente||''}</p><img src='${x.firma}'>${(x.fotos||[]).map(f=>`<img src='${f}'>`).join('')}<button class='btn red' onclick='borrar(${i})'>🗑 Borrar</button></details>`})}cargar();</script></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>TRANSPORTE INTERNO SYNTEGON TELSTAR</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:12px;
+    font-family:Segoe UI,Arial;
+    background:#eef3f8;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+.header{
+    background:#003b7a;
+    color:#fff;
+    padding:20px;
+    border-radius:18px;
+    text-align:center;
+}
+
+.logo{
+    font-size:34px;
+    font-weight:900;
+}
+
+.card{
+    background:#fff;
+    padding:16px;
+    border-radius:16px;
+    margin-top:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+
+.btn{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:12px;
+    color:#fff;
+    font-weight:700;
+    margin-top:8px;
+    cursor:pointer;
+}
+
+.blue{
+    background:#0078d4;
+}
+
+.green{
+    background:#107c10;
+}
+
+.red{
+    background:#c50f1f;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    box-sizing:border-box;
+}
+
+video,
+img{
+    width:100%;
+    border-radius:10px;
+    margin-top:8px;
+}
+
+canvas{
+    border:2px solid #ccc;
+    border-radius:10px;
+    width:100%;
+    height:180px;
+    touch-action:none;
+    background:white;
+    display:block;
+}
+
+details{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:10px;
+    margin-top:10px;
+}
+
+summary{
+    cursor:pointer;
+    font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="logo">SYNTEGON</div>
+        <div>TRANSPORTE INTERNO TELSTAR</div>
+        <div id="contador">Registros hoy: 0</div>
+    </div>
+
+    <div class="card">
+
+        <button class="btn blue" onclick="nuevoRegistro()">
+            📷 NUEVO REGISTRO
+        </button>
+
+        <div id="form" style="display:none">
+
+            <p><b>Proveedor / Cliente</b></p>
+            <input id="cliente">
+
+            <p><b>Firma</b></p>
+
+            <canvas id="firma"></canvas>
+
+            <button class="btn red" onclick="limpiarFirma()">
+                Borrar firma
+            </button>
+
+            <button class="btn blue" onclick="abrirCamara()">
+                📷 ABRIR CÁMARA
+            </button>
+
+            <div id="camaraBox" style="display:none">
+
+                <video
+                    id="video"
+                    autoplay
+                    playsinline>
+                </video>
+
+                <button
+                    class="btn green"
+                    onclick="tomarFoto()">
+                    📸 TOMAR FOTO
+                </button>
+
+                <button
+                    class="btn red"
+                    onclick="cerrarCamara()">
+                    ❌ CERRAR CÁMARA
+                </button>
+
+            </div>
+
+            <div id="preview"></div>
+
+            <button
+                class="btn green"
+                onclick="guardarRegistro()">
+                ✅ GUARDAR REGISTRO
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h3>Historial</h3>
+
+        <div id="historial"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+let fotos = [];
+let stream = null;
+
+function nuevoRegistro(){
+
+    document.getElementById('form').style.display='block';
+
+}
+
+const canvas = document.getElementById('firma');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas(){
+
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 180;
+
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+}
+
+resizeCanvas();
+
+window.addEventListener('resize',resizeCanvas);
+
+let draw = false;
+
+function getPos(e){
+
+    const rect = canvas.getBoundingClientRect();
+
+    if(e.touches && e.touches.length){
+
+        return{
+            x:e.touches[0].clientX-rect.left,
+            y:e.touches[0].clientY-rect.top
+        };
+    }
+
+    return{
+        x:e.clientX-rect.left,
+        y:e.clientY-rect.top
+    };
+}
+
+/* RATON */
+
+canvas.addEventListener('mousedown',function(e){
+
+    draw = true;
+
+    const p = getPos(e);
+
+    ctx.beginPath();
+
+    ctx.moveTo(p.x,p.y);
+
+});
+
+canvas.addEventListener('mousemove',function(e){
+
+    if(!draw) return;
+
+    const p = getPos(e);
+
+    ctx.lineTo(p.x,p.y);
+
+    ctx.stroke();
+
+});
+
+window.addEventListener('mouseup',function(){
+
+    draw = false;
+
+});
+
+/* MOVIL */
+
+canvas.addEventListener('touchstart',function(e){
+
+    e.preventDefault();
+
+    draw = true;
+
+    const p = getPos(e);
+
+    ctx.beginPath();
+
+    ctx.moveTo(p.x,p.y);
+
+},{passive:false});
+
+canvas.addEventListener('touchmove',function(e){
+
+    if(!draw) return;
+
+    e.preventDefault();
+
+    const p = getPos(e);
+
+    ctx.lineTo(p.x,p.y);
+
+    ctx.stroke();
+
+},{passive:false});
+
+canvas.addEventListener('touchend',function(e){
+
+    e.preventDefault();
+
+    draw = false;
+
+},{passive:false});
+
+canvas.addEventListener('touchcancel',function(){
+
+    draw = false;
+
+});
+
+function limpiarFirma(){
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+}
+
+async function abrirCamara(){
+
+    try{
+
+        stream =
+        await navigator.mediaDevices.getUserMedia({
+            video:{
+                facingMode:'environment'
+            }
+        });
+
+        document.getElementById('video').srcObject =
+        stream;
+
+        document.getElementById('camaraBox').style.display =
+        'block';
+
+    }catch(e){
+
+        alert(
+            'Permite acceso a la cámara y usa GitHub Pages (HTTPS)'
+        );
+
+    }
+
+}
+
+function cerrarCamara(){
+
+    if(stream){
+
+        stream.getTracks().forEach(
+            track => track.stop()
+        );
+
+        stream = null;
+    }
+
+    document.getElementById('camaraBox').style.display =
+    'none';
+
+}
+
+function tomarFoto(){
+
+    const video =
+    document.getElementById('video');
+
+    const canvasFoto =
+    document.createElement('canvas');
+
+    canvasFoto.width = video.videoWidth;
+    canvasFoto.height = video.videoHeight;
+
+    canvasFoto
+    .getContext('2d')
+    .drawImage(
+        video,
+        0,
+        0
+    );
+
+    fotos.push(
+        canvasFoto.toDataURL(
+            'image/jpeg',
+            0.9
+        )
+    );
+
+    renderFotos();
+
+}
+
+function renderFotos(){
+
+    document.getElementById('preview').innerHTML =
+    fotos.map((foto,index)=>`
+
+        <div>
+
+            <img src="${foto}">
+
+            <button
+                class="btn red"
+                onclick="eliminarFoto(${index})">
+
+                🗑 Eliminar foto
+
+            </button>
+
+        </div>
+
+    `).join('');
+
+}
+
+function eliminarFoto(index){
+
+    fotos.splice(index,1);
+
+    renderFotos();
+
+}
+
+function guardarRegistro(){
+
+    const registros =
+    JSON.parse(
+        localStorage.getItem(
+            'registrosTransporte'
+        ) || '[]'
+    );
+
+    const ahora = new Date();
+
+    registros.push({
+
+        cliente:
+        document.getElementById('cliente').value,
+
+        fecha:
+        ahora.toLocaleDateString('es-ES'),
+
+        hora:
+        ahora.toLocaleTimeString('es-ES'),
+
+        firma:
+        canvas.toDataURL(),
+
+        fotos:[...fotos]
+
+    });
+
+    localStorage.setItem(
+        'registrosTransporte',
+        JSON.stringify(registros)
+    );
+
+    document.getElementById('cliente').value='';
+
+    fotos=[];
+
+    renderFotos();
+
+    limpiarFirma();
+
+    cargar();
+
+    alert('Registro guardado');
+
+}
+
+function borrar(index){
+
+    const registros =
+    JSON.parse(
+        localStorage.getItem(
+            'registrosTransporte'
+        ) || '[]'
+    );
+
+    registros.splice(index,1);
+
+    localStorage.setItem(
+        'registrosTransporte',
+        JSON.stringify(registros)
+    );
+
+    cargar();
+
+}
+
+function cargar(){
+
+    const registros =
+    JSON.parse(
+        localStorage.getItem(
+            'registrosTransporte'
+        ) || '[]'
+    );
+
+    document.getElementById('contador').innerText =
+    'Registros hoy: ' +
+    registros.filter(
+        x =>
+        x.fecha ===
+        new Date().toLocaleDateString('es-ES')
+    ).length;
+
+    const historial =
+    document.getElementById('historial');
+
+    historial.innerHTML='';
+
+    registros
+    .slice()
+    .reverse()
+    .forEach((registro,pos)=>{
+
+        const indice =
+        registros.length-1-pos;
+
+        historial.innerHTML += `
+
+        <details>
+
+            <summary>
+
+            ${registro.fecha}
+            ${registro.hora}
+            -
+
+            ${registro.cliente || 'Sin nombre'}
+
+            </summary>
+
+            <p>
+                <b>Cliente:</b>
+                ${registro.cliente || ''}
+            </p>
+
+            <img src="${registro.firma}">
+
+            ${
+                (registro.fotos || [])
+                .map(
+                    foto =>
+                    `<img src="${foto}">`
+                )
+                .join('')
+            }
+
+            <button
+                class="btn red"
+                onclick="borrar(${indice})">
+
+                🗑 Borrar
+
+            </button>
+
+        </details>
+
+        `;
+
+    });
+
+}
+
+cargar();
+
+</script>
+
+</body>
+</html>
