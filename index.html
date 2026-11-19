@@ -2,58 +2,453 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>TRANSPORTE INTERNO SYNTEGON TELSTAR</title>
+
 <style>
-body{margin:0;background:#eef3f8;font-family:Segoe UI,Arial}
-.container{max-width:900px;margin:auto;padding:12px}
-.header{background:#0b3b78;color:#fff;padding:20px;border-radius:18px;text-align:center}
-.logo{font-size:34px;font-weight:900}
-.bigbtn,.btn{width:100%;border:none;border-radius:14px;color:#fff;font-weight:700;cursor:pointer}
-.bigbtn{padding:22px;background:#0078d4;font-size:24px}
-.btn{padding:14px;margin-top:8px}
-.green{background:#107c10}.red{background:#c50f1f}.blue{background:#0078d4}
-.card{background:white;padding:16px;border-radius:16px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-input{width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;box-sizing:border-box}
-canvas#firma{border:2px solid #ccc;border-radius:10px;width:100%;height:180px;touch-action:none}
-.details{margin-top:10px}
-.record img,.thumb{max-width:100%;border-radius:10px;margin-top:8px}
-.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
-</style></head>
+body{
+    margin:0;
+    padding:12px;
+    background:#eef3f8;
+    font-family:Segoe UI,Arial;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+.header{
+    background:#003b7a;
+    color:white;
+    border-radius:18px;
+    padding:20px;
+    text-align:center;
+}
+
+.logo{
+    font-size:34px;
+    font-weight:900;
+}
+
+.counter{
+    margin-top:10px;
+    font-weight:bold;
+}
+
+.card{
+    background:white;
+    border-radius:16px;
+    padding:16px;
+    margin-top:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15);
+}
+
+.bigBtn{
+    width:100%;
+    background:#0078d4;
+    color:white;
+    border:none;
+    border-radius:16px;
+    padding:24px;
+    font-size:24px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:8px;
+}
+
+.blue{
+    background:#0078d4;
+}
+
+.green{
+    background:#107c10;
+}
+
+.red{
+    background:#c50f1f;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    box-sizing:border-box;
+}
+
+canvas{
+    border:2px solid #ccc;
+    border-radius:10px;
+    width:100%;
+    height:180px;
+    touch-action:none;
+}
+
+.thumb{
+    width:100%;
+    border-radius:10px;
+    margin-top:8px;
+}
+
+.record img{
+    width:100%;
+    border-radius:10px;
+    margin-top:8px;
+}
+
+.actions{
+    margin-top:10px;
+}
+
+details{
+    margin-bottom:12px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:10px;
+    background:white;
+}
+</style>
+</head>
+
 <body>
+
 <div class="container">
-<div class="header"><div class="logo">SYNTEGON</div><div>TRANSPORTE INTERNO TELSTAR</div><div id="contador">Registros hoy: 0</div></div>
-<div class="card">
-<button class="bigbtn" onclick="mostrarFormulario()">📷 NUEVO REGISTRO</button>
-<div id="form" style="display:none;margin-top:12px">
-<label>Proveedor / Cliente</label><input id="cliente" placeholder="Escribir nombre">
-<p><b>Firma</b></p>
-<canvas id="firma"></canvas>
-<button class="btn red" onclick="limpiarFirma()">Borrar firma</button>
-<input type="file" id="fotos" accept="image/*" capture="environment" style="display:none">
-<button class="btn blue" onclick="document.getElementById('fotos').click()">📷 Añadir foto(s)</button>
-<div id="preview"></div>
-<button class="btn green" onclick="guardarRegistro()">✅ Guardar registro</button>
-</div></div>
-<div class="card"><h3>Historial</h3><div id="historial"></div></div>
+
+<div class="header">
+<div class="logo">SYNTEGON</div>
+<div>TRANSPORTE INTERNO TELSTAR</div>
+
+<div id="contador" class="counter">
+Registros hoy: 0
 </div>
+</div>
+
+<div class="card">
+
+<button class="bigBtn" onclick="mostrarFormulario()">
+📷 NUEVO REGISTRO
+</button>
+
+<div id="formulario" style="display:none;margin-top:15px;">
+
+<label><b>Proveedor / Cliente</b></label>
+<input id="cliente" placeholder="Escribir nombre">
+
+<h3>Firma</h3>
+
+<canvas id="firma"></canvas>
+
+<button class="btn red" onclick="limpiarFirma()">
+Borrar firma
+</button>
+
+<input
+type="file"
+id="fotoInput"
+accept="image/*"
+capture="environment"
+style="display:none"
+>
+
+<button
+class="btn blue"
+onclick="document.getElementById('fotoInput').click()">
+📷 HACER FOTO
+</button>
+
+<div id="previewFotos"></div>
+
+<button
+class="btn green"
+onclick="guardarRegistro()">
+✅ GUARDAR REGISTRO
+</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Historial de registros</h2>
+
+<div id="historial"></div>
+
+</div>
+
+</div>
+
 <script>
-let fotos=[];
-function mostrarFormulario(){document.getElementById('form').style.display='block'}
-const canvas=document.getElementById('firma');const ctx=canvas.getContext('2d');
-function resize(){canvas.width=canvas.offsetWidth;canvas.height=180;} resize(); window.onresize=resize;
-let d=false;
-function pos(e){const r=canvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}
-function start(e){d=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)}
-function move(e){if(!d)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()}
-function end(){d=false}
-canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);window.addEventListener('mouseup',end);
-canvas.addEventListener('touchstart',start);canvas.addEventListener('touchmove',move);canvas.addEventListener('touchend',end);
-function limpiarFirma(){ctx.clearRect(0,0,canvas.width,canvas.height)}
-document.getElementById('fotos').addEventListener('change',e=>{for(const f of e.target.files){const r=new FileReader();r.onload=x=>{fotos.push(x.target.result);renderFotos()};r.readAsDataURL(f)}})
-function renderFotos(){document.getElementById('preview').innerHTML=fotos.map(f=>`<img class="thumb" src="${f}">`).join('')}
-function guardarRegistro(){const regs=JSON.parse(localStorage.getItem('regs')||'[]');const d=new Date();regs.push({cliente:cliente.value,fecha:d.toLocaleDateString('es-ES'),hora:d.toLocaleTimeString('es-ES'),firma:canvas.toDataURL(),fotos:[...fotos]});localStorage.setItem('regs',JSON.stringify(regs));cliente.value='';fotos=[];renderFotos();limpiarFirma();cargar();alert('Registro guardado');}
-function borrar(i){if(!confirm('Borrar registro'))return;const r=JSON.parse(localStorage.getItem('regs')||'[]');r.splice(i,1);localStorage.setItem('regs',JSON.stringify(r));cargar();}
-function cargar(){const r=JSON.parse(localStorage.getItem('regs')||'[]');const hoy=new Date().toLocaleDateString('es-ES');contador.innerText='Registros hoy: '+r.filter(x=>x.fecha===hoy).length;historial.innerHTML='';r.slice().reverse().forEach((x,idx)=>{const real=r.length-1-idx;historial.innerHTML+=`<details class="details"><summary><b>${x.fecha} ${x.hora}</b> - ${x.cliente||'Sin nombre'}</summary><div class="record"><p><b>Cliente/Proveedor:</b> ${x.cliente}</p><p><b>Firma:</b><br><img src="${x.firma}"></p>${x.fotos.map(f=>`<img src="${f}">`).join('')}<div class="row"><button class="btn red" onclick="borrar(${real})">🗑 Borrar</button></div></div></details>`})}
-cargar();
-</script></body></html>
+
+let fotos = [];
+
+function mostrarFormulario(){
+    document.getElementById("formulario").style.display="block";
+}
+
+const canvas = document.getElementById("firma");
+const ctx = canvas.getContext("2d");
+
+function ajustarCanvas(){
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 180;
+}
+
+ajustarCanvas();
+window.addEventListener("resize", ajustarCanvas);
+
+let dibujando = false;
+
+function getPos(e){
+
+    const rect = canvas.getBoundingClientRect();
+
+    if(e.touches){
+        return {
+            x:e.touches[0].clientX - rect.left,
+            y:e.touches[0].clientY - rect.top
+        };
+    }
+
+    return {
+        x:e.clientX - rect.left,
+        y:e.clientY - rect.top
+    };
+}
+
+function iniciar(e){
+    dibujando = true;
+    const p = getPos(e);
+
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y);
+}
+
+function mover(e){
+
+    if(!dibujando) return;
+
+    const p = getPos(e);
+
+    ctx.lineTo(p.x,p.y);
+    ctx.stroke();
+}
+
+function parar(){
+    dibujando = false;
+}
+
+canvas.addEventListener("mousedown", iniciar);
+canvas.addEventListener("mousemove", mover);
+window.addEventListener("mouseup", parar);
+
+canvas.addEventListener("touchstart", iniciar);
+canvas.addEventListener("touchmove", mover);
+canvas.addEventListener("touchend", parar);
+
+function limpiarFirma(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+document
+.getElementById("fotoInput")
+.addEventListener("change", function(e){
+
+    const archivo = e.target.files[0];
+
+    if(!archivo) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(ev){
+
+        fotos.push(ev.target.result);
+
+        renderFotos();
+    }
+
+    reader.readAsDataURL(archivo);
+
+    e.target.value="";
+});
+
+function renderFotos(){
+
+    const div = document.getElementById("previewFotos");
+
+    div.innerHTML="";
+
+    fotos.forEach(f=>{
+
+        div.innerHTML += `
+            <img class="thumb" src="${f}">
+        `;
+    });
+}
+
+function guardarRegistro(){
+
+    const cliente =
+    document.getElementById("cliente").value.trim();
+
+    if(cliente===""){
+        alert("Introduce Cliente / Proveedor");
+        return;
+    }
+
+    if(fotos.length===0){
+        alert("Añade al menos una foto");
+        return;
+    }
+
+    const fechaAhora = new Date();
+
+    const registro = {
+
+        cliente:cliente,
+
+        fecha:
+        fechaAhora.toLocaleDateString("es-ES"),
+
+        hora:
+        fechaAhora.toLocaleTimeString("es-ES"),
+
+        firma:
+        canvas.toDataURL(),
+
+        fotos:[...fotos]
+    };
+
+    const registros =
+    JSON.parse(
+        localStorage.getItem("registrosTransporte")
+        || "[]"
+    );
+
+    registros.push(registro);
+
+    localStorage.setItem(
+        "registrosTransporte",
+        JSON.stringify(registros)
+    );
+
+    document.getElementById("cliente").value="";
+
+    fotos=[];
+
+    renderFotos();
+
+    limpiarFirma();
+
+    cargarHistorial();
+
+    alert("Registro guardado correctamente");
+}
+
+function borrarRegistro(index){
+
+    if(!confirm("¿Borrar registro?")) return;
+
+    const registros =
+    JSON.parse(
+        localStorage.getItem("registrosTransporte")
+        || "[]"
+    );
+
+    registros.splice(index,1);
+
+    localStorage.setItem(
+        "registrosTransporte",
+        JSON.stringify(registros)
+    );
+
+    cargarHistorial();
+}
+
+function cargarHistorial(){
+
+    const registros =
+    JSON.parse(
+        localStorage.getItem("registrosTransporte")
+        || "[]"
+    );
+
+    const historial =
+    document.getElementById("historial");
+
+    historial.innerHTML="";
+
+    const hoy =
+    new Date().toLocaleDateString("es-ES");
+
+    document.getElementById("contador").innerText =
+        "Registros hoy: " +
+        registros.filter(
+            r => r.fecha===hoy
+        ).length;
+
+    registros
+    .slice()
+    .reverse()
+    .forEach((r,idx)=>{
+
+        const realIndex =
+        registros.length - 1 - idx;
+
+        historial.innerHTML += `
+
+        <details>
+
+        <summary>
+        <b>${r.fecha} ${r.hora}</b>
+        - ${r.cliente}
+        </summary>
+
+        <div class="record">
+
+        <p><b>Cliente:</b> ${r.cliente}</p>
+
+        <p><b>Firma:</b></p>
+        <img src="${r.firma}">
+
+        ${r.fotos.map(
+            f => `<img src="${f}">`
+        ).join("")}
+
+        <div class="actions">
+
+        <button
+        class="btn red"
+        onclick="borrarRegistro(${realIndex})">
+
+        🗑 Borrar registro
+
+        </button>
+
+        </div>
+
+        </div>
+
+        </details>
+
+        `;
+    });
+}
+
+cargarHistorial();
+
+</script>
+
+</body>
+</html>
