@@ -1,64 +1,367 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TRANSPORTE INTERNO SYNTEGON TELSTAR V6</title>
-<style>
-body{margin:0;padding:12px;font-family:Segoe UI,Arial;background:#eef3f8}
-.container{max-width:900px;margin:auto}.header{background:#003b7a;color:#fff;padding:20px;border-radius:18px;text-align:center}
-.logo{font-size:34px;font-weight:900}.card{background:#fff;padding:16px;border-radius:16px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.btn{width:100%;padding:16px;border:none;border-radius:12px;color:#fff;font-weight:700;margin-top:8px;cursor:pointer}
-.blue{background:#0078d4}.green{background:#107c10}.red{background:#c50f1f}
-input{width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;box-sizing:border-box}
-video,img{width:100%;border-radius:10px;margin-top:8px}
-canvas{border:2px solid #ccc;border-radius:10px;width:100%;height:180px;touch-action:none;background:white;display:block}
-details{border:1px solid #ddd;border-radius:10px;padding:10px;margin-top:10px}
-summary{cursor:pointer;font-weight:bold}
-</style></head><body>
-<div class="container">
-<div class="header"><div class="logo">SYNTEGON</div><div>TRANSPORTE INTERNO TELSTAR</div><div id="contador">Registros hoy: 0</div></div>
-<div class="card">
-<button class="btn blue" onclick="nuevoRegistro()">📷 NUEVO REGISTRO</button>
-<div id="form" style="display:none">
-<p><b>Proveedor / Cliente</b></p><input id="cliente">
-<p><b>Firma</b></p>
-<canvas id="firma" tabindex="-1"></canvas>
-<button class="btn red" onclick="limpiarFirma()">Borrar firma</button>
-<button class="btn blue" onclick="abrirCamara()">📷 ABRIR CÁMARA</button>
-<div id="camaraBox" style="display:none">
-<video id="video" autoplay playsinline></video>
-<button class="btn green" onclick="tomarFoto()">📸 TOMAR FOTO</button>
-<button class="btn red" onclick="cerrarCamara()">❌ CERRAR CÁMARA</button>
-</div>
-<div id="preview"></div>
-<button class="btn green" onclick="guardarRegistro()">✅ GUARDAR REGISTRO</button>
-</div></div>
-<div class="card"><h3>Historial</h3><div id="historial"></div></div></div>
-<script>
-let fotos=[];let stream=null;
-function nuevoRegistro(){document.getElementById('form').style.display='block'}
-const canvas=document.getElementById('firma');
-const ctx=canvas.getContext('2d');
-canvas.blur();
-function resizeCanvas(){canvas.width=canvas.offsetWidth;canvas.height=180;ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';}
-resizeCanvas();window.addEventListener('resize',resizeCanvas);
-let draw=false;
-function getPos(e){const r=canvas.getBoundingClientRect();if(e.touches&&e.touches.length){return{x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top}}return{x:e.clientX-r.left,y:e.clientY-r.top}}
-canvas.addEventListener('mousedown',e=>{draw=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)});
-canvas.addEventListener('mousemove',e=>{if(!draw)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke()});
-window.addEventListener('mouseup',()=>draw=false);
-canvas.addEventListener('touchstart',e=>{e.preventDefault();draw=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)},{passive:false});
-canvas.addEventListener('touchmove',e=>{if(!draw)return;e.preventDefault();const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke()},{passive:false});
-canvas.addEventListener('touchend',e=>{e.preventDefault();draw=false},{passive:false});
-function limpiarFirma(){ctx.clearRect(0,0,canvas.width,canvas.height)}
-async function abrirCamara(){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=stream;camaraBox.style.display='block';}catch(e){alert('Permite acceso a la cámara y usa HTTPS');}}
-function cerrarCamara(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}camaraBox.style.display='none';}
-function tomarFoto(){const video=document.getElementById('video');const canvasFoto=document.createElement('canvas');const anchoMax=800;canvasFoto.width=anchoMax;canvasFoto.height=Math.round(video.videoHeight*(anchoMax/video.videoWidth));canvasFoto.getContext('2d').drawImage(video,0,0,canvasFoto.width,canvasFoto.height);fotos.push(canvasFoto.toDataURL('image/jpeg',0.5));renderFotos();}
-function renderFotos(){preview.innerHTML=fotos.map((f,i)=>`<div><img src="${f}"><button class="btn red" onclick="eliminarFoto(${i})">🗑 Eliminar foto</button></div>`).join('')}
-function eliminarFoto(i){fotos.splice(i,1);renderFotos()}
-function guardarRegistro(){const registros=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');const ahora=new Date();registros.push({cliente:cliente.value,fecha:ahora.toLocaleDateString('es-ES'),hora:ahora.toLocaleTimeString('es-ES'),firma:canvas.toDataURL('image/jpeg',0.4),fotos:[...fotos]});localStorage.setItem('registrosTransporte',JSON.stringify(registros));cliente.value='';fotos=[];renderFotos();limpiarFirma();cargar();alert('Registro guardado');}
-function borrar(i){const r=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');r.splice(i,1);localStorage.setItem('registrosTransporte',JSON.stringify(r));cargar();}
-function cargar(){const r=JSON.parse(localStorage.getItem('registrosTransporte')||'[]');contador.innerText='Registros hoy: '+r.filter(x=>x.fecha===new Date().toLocaleDateString('es-ES')).length;historial.innerHTML='';r.slice().reverse().forEach((reg,p)=>{const i=r.length-1-p;historial.innerHTML+=`<details><summary>${reg.fecha} ${reg.hora} - ${reg.cliente||'Sin nombre'}</summary><p><b>Cliente:</b> ${reg.cliente||''}</p><img src="${reg.firma}">${(reg.fotos||[]).map(f=>`<img src="${f}">`).join('')}<button class="btn red" onclick="borrar(${i})">🗑 Borrar</button></details>`})}
-cargar();
-</script></body></html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TRANSPORTE INTERNO - TELSTAR</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #eef3f8;
+      color: #1b2430;
+    }
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 8px 12px 20px 12px;
+    }
+    .header {
+      background: #ffffff;
+      color: #111111;
+      border-bottom: 3px solid #0b3b78;
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .brand-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .telstar-svg {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+    .sub {
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: #0b3b78;
+      text-transform: uppercase;
+    }
+    .counter {
+      background: #0b3b78;
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px;
+      margin-top: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .bigbtn {
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: 14px;
+      background: #0078d4;
+      color: #fff;
+      font-size: 21px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .field-label {
+      display: block;
+      font-weight: 700;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      color: #0b3b78;
+    }
+    .input-nombre {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border: 2px solid #cbd6e2;
+      border-radius: 12px;
+    }
+    .action-trigger {
+      width: 100%;
+      padding: 15px;
+      margin-top: 12px;
+      border: 2px solid #0078d4;
+      border-radius: 12px;
+      background: #eaf4fc;
+      color: #005a9e;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .sign-trigger {
+      border-color: #0b3b78;
+      background: #edf2f9;
+      color: #0b3b78;
+    }
+    .signature-box {
+      margin-top: 14px;
+      padding: 12px;
+      border: 2px solid #0b3b78;
+      border-radius: 14px;
+      background: #f8fbff;
+    }
+    #canvasFirma {
+      width: 100%;
+      height: 200px;
+      display: block;
+      background: #fff;
+      border: 2px dashed #9fb3c8;
+      border-radius: 10px;
+      touch-action: none;
+    }
+    .sign-preview {
+      margin-top: 12px;
+      padding: 10px;
+      border: 1px solid #d5e0ec;
+      border-radius: 12px;
+      background: #f9fbfe;
+    }
+    .sign-preview img {
+      max-width: 100%;
+      max-height: 120px;
+      display: block;
+      margin-top: 8px;
+      background: #fff;
+    }
+    video {
+      width: 100%;
+      max-height: 420px;
+      background: #111;
+      border-radius: 14px;
+      margin-top: 12px;
+      display: block;
+    }
+    .btn {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .snap { background: #0078d4; }
+    .save { background: #107c10; }
+    .clear { background: #5c6b7c; }
+    .close { background: #d83b01; }
+    .thumbs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .thumb-box {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #111;
+    }
+    .thumb-box img {
+      width: 100%;
+      height: 95px;
+      object-fit: cover;
+      display: block;
+    }
+    .thumb-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #c50f1f;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 3px 7px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .accordion-toggle {
+      width: 100%;
+      background: #f4f7fb;
+      border: 2px solid #d5e0ec;
+      border-radius: 14px;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 17px;
+      font-weight: 800;
+      color: #0b3b78;
+      cursor: pointer;
+    }
+    .accordion-content {
+      display: none;
+      margin-top: 12px;
+    }
+    .accordion-content.open {
+      display: block;
+    }
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f4f7fb;
+      border: 1px solid #d5e0ec;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .filter-bar label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0b3b78;
+      white-space: nowrap;
+    }
+    .filter-select {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid #b8c7d9;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1b2430;
+    }
+    .day-group {
+      border: 1px solid #d5e0ec;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .day-toggle {
+      width: 100%;
+      background: #eaf1f8;
+      border: none;
+      padding: 13px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0b3b78;
+      cursor: pointer;
+      text-align: left;
+    }
+    .day-badge {
+      background: #0b3b78;
+      color: #fff;
+      border-radius: 12px;
+      padding: 2px 9px;
+      font-size: 12px;
+      margin-left: 6px;
+    }
+    .day-content {
+      display: none;
+      padding: 12px;
+      background: #ffffff;
+    }
+    .day-content.open {
+      display: block;
+    }
+    .item {
+      background: #f9fbfe;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .item:last-child {
+      margin-bottom: 0;
+    }
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .photo-card img {
+      width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #111;
+    }
+    .download-sm {
+      display: block;
+      margin-top: 6px;
+      text-align: center;
+      padding: 8px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #fff;
+      background: #0078d4;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .delete {
+      width: 100%;
+      margin-top: 10px;
+      padding: 11px;
+      border: none;
+      border-radius: 10px;
+      background: #c50f1f;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="brand-block">
+        <svg class="telstar-svg" viewBox="0 0 360 88" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Telstar - A Syntegon Company">
+          <text x="0" y="54" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="60" letter-spacing="-1.5">Telstar</text>
+          <rect x="205" y="42" width="12" height="12" fill="none" stroke="#000000" stroke-width="3.5"/>
+          <text x="36" y="80" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="14.5" letter-spacing="0.6">A SYNTEGON COMPANY</text>
+        </svg>
+        <div class="sub">Transporte interno · v2.6</div>
+      </div>
+      <div id="contador" class="counter">Hoy: 0</div>
+    </div>
+
+    <div class="card">
+      <button type="button" class="bigbtn" onclick="abrirFormulario()">📷 NUEVO REGISTRO</button>
+
+      <div id="formularioRegistro" style="display:none;">
+        <div id="menuRegistro">
+          <label class="field-label" for="nombre">Proveedor/cliente</label>
+          <input type="text" id="nombre" class="input-nombre" placeholder="Escribe el proveedor o cliente...">
+
+          <button type="button" id="btnAbrirFirma" class="action-trigger sign-trigger" onclick="abrirFirma()">✍️ FIRMAR</button>
+
+          <div id="previewFirmaBorrador" class="sign-preview" style="display:none;">
+            <b>✅ Firma guardada</b>
+            <button type="button" onclick="quitarFirmaBorrador()" style="margin-left:8px;">Quitar</button>
+            <img id="imgFirmaBorrador" alt="Firma">
+          </div>
+
+          <button type="button" id="btnAbrirCamara" class="action-trigger" onclick="iniciarCamara()">📸 ABRIR CÁMARA</button>
+
+          <div id="camara" style="display:none;">
+            <video id="video" autoplay playsinline muted></video>
+            <button type="button" class="btn snap" onclick="sacarFoto()">📷 SACAR FOTO</button>
+            <button type="button" class="btn close" onclick="cerrarCamara()">❌ CERRAR CÁMARA</button>
+          </div>
+
+          <div id="seccionBorrador" style="display:none; margin-top:14px;">
+            <div id="tituloBorrador" style="font-weight:700; color:#0b3b78;">Fotos capturadas (0):</div>
+            <div id="miniaturasBorrador" class="thumbs"></div>
+          </div>
+
+          <button type="button" class="btn save" onclick="guardarRegistro()">✅ GUARDAR REGISTRO</button>
+          <button type="button" class="btn close" onclick="cancelarRegistro()">❌
